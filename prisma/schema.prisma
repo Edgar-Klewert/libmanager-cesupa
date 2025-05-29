@@ -1,0 +1,104 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id              String   @id @default(cuid())
+  nome            String
+  dataNascimento  String
+  cpf             String   @unique
+  telefone        String
+  endereco        String
+  categoria       CategoriaUsuario
+  email           String?
+  matricula       String?
+  departamento    String?
+  ativo           Boolean  @default(true)
+  criadoEm        DateTime @default(now())
+  atualizadoEm    DateTime @updatedAt
+
+  // Relacionamentos
+  emprestimos     Emprestimo[]
+  historico       HistoricoAlteracao[]
+
+  @@map("usuarios")
+}
+
+model ItemAcervo {
+  id                    String   @id @default(cuid())
+  titulo                String
+  isbn                  String?
+  codigo                String   @unique
+  autor                 String
+  categoria             String
+  quantidadeTotal       Int      @default(1)
+  quantidadeDisponivel  Int      @default(1)
+  quantidadeEmprestada  Int      @default(0)
+  criadoEm              DateTime @default(now())
+  atualizadoEm          DateTime @updatedAt
+
+  // Relacionamentos
+  emprestimos           Emprestimo[]
+
+  @@map("itens_acervo")
+}
+
+model Emprestimo {
+  id                    String   @id @default(cuid())
+  usuarioId             String
+  itemId                String
+  dataEmprestimo        DateTime @default(now())
+  dataDevolucaoPrevista DateTime
+  dataDevolucaoReal     DateTime?
+  status                StatusEmprestimo @default(ATIVO)
+  bibliotecario         String
+  observacoes           String?
+  multa                 Float?   @default(0)
+  criadoEm              DateTime @default(now())
+  atualizadoEm          DateTime @updatedAt
+
+  // Relacionamentos
+  usuario               Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  item                  ItemAcervo @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@map("emprestimos")
+}
+
+model HistoricoAlteracao {
+  id             String   @id @default(cuid())
+  usuarioId      String
+  campo          String
+  valorAnterior  String
+  valorNovo      String
+  alteradoPor    String
+  alteradoEm     DateTime @default(now())
+
+  // Relacionamentos
+  usuario        Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("historico_alteracoes")
+}
+
+enum CategoriaUsuario {
+  ESTUDANTE
+  PROFESSOR
+  VISITANTE
+
+  @@map("categoria_usuario")
+}
+
+enum StatusEmprestimo {
+  ATIVO
+  DEVOLVIDO
+  ATRASADO
+
+  @@map("status_emprestimo")
+}
